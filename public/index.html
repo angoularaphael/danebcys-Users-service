@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users Service — Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e1e4e8;
+      min-height: 100vh;
+    }
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 18px; font-weight: 600; color: #d2a8ff; }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block; margin-right: 8px;
+    }
+    .status-dot.ok { background: #3fb950; }
+    .status-dot.err { background: #f85149; }
+    .status-dot.loading { background: #d29922; }
+
+    .auth-bar {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .auth-bar label { font-size: 12px; color: #8b949e; }
+    .auth-bar input {
+      flex: 1;
+      padding: 6px 10px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #3fb950;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #d2a8ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .badge.post { background: #1f6feb33; color: #58a6ff; }
+    .badge.get { background: #23863633; color: #3fb950; }
+    .badge.put { background: #d2992233; color: #d29922; }
+    .badge.del { background: #da363333; color: #f85149; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e1e4e8;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #d2a8ff; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      color: #fff;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn:hover:not(:disabled) { opacity: 0.85; }
+    .btn-primary { background: #238636; }
+    .btn-blue { background: #1f6feb; }
+    .btn-red { background: #da3633; }
+    .btn-orange { background: #d29922; color: #000; }
+    .btn-purple { background: #8957e5; }
+
+    .result-box {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+    .result-box pre {
+      font-size: 12px;
+      color: #e1e4e8;
+      white-space: pre-wrap;
+    }
+
+    #log-output {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+    .log-entry { margin-bottom: 2px; }
+    .log-time { color: #484f58; }
+    .log-info { color: #d2a8ff; }
+    .log-ok { color: #3fb950; }
+    .log-err { color: #f85149; }
+    .log-warn { color: #d29922; }
+
+    .flex-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .mt-8 { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Users Service — Interface de test</h1>
+    <div id="health-status">
+      <span class="status-dot loading"></span>
+      <span style="font-size:13px">Connexion...</span>
+    </div>
+  </header>
+
+  <div class="auth-bar">
+    <label>Access Token (depuis Auth Service) :</label>
+    <input type="text" id="access-token" placeholder="Coller le token JWT ici">
+  </div>
+
+  <div class="container">
+
+    <!-- PROFIL -->
+    <div class="card">
+      <h2><span class="badge get">GET</span> /me — Mon profil</h2>
+      <button class="btn btn-blue" id="btn-profile">Charger</button>
+      <div class="result-box mt-8" id="profile-result">
+        <pre id="profile-json"></pre>
+      </div>
+    </div>
+
+    <!-- UPDATE PROFIL -->
+    <div class="card">
+      <h2><span class="badge put">PUT</span> /me — Modifier profil</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="upd-username" placeholder="nouveau_pseudo">
+        </div>
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" id="upd-firstname" placeholder="Jean">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" id="upd-lastname" placeholder="Dupont">
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" id="upd-phone" placeholder="+33612345678">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Pays</label>
+        <input type="text" id="upd-country" placeholder="France">
+      </div>
+      <button class="btn btn-orange" id="btn-update-profile">Mettre à jour</button>
+    </div>
+
+    <!-- PREMIUM -->
+    <div class="card">
+      <h2><span class="badge put">PUT</span> /me/premium — Abonnement</h2>
+      <div class="form-group">
+        <label>Niveau Premium</label>
+        <select id="premium-level">
+          <option value="">-- Choisir --</option>
+          <option value="premium">Premium</option>
+          <option value="premium_avancee">Premium Avancée</option>
+          <option value="etudiant">Étudiant</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Justificatif étudiant (URL/chemin)</label>
+        <input type="text" id="student-proof" placeholder="lien vers justificatif">
+      </div>
+      <button class="btn btn-purple" id="btn-premium">Demander</button>
+    </div>
+
+    <!-- DELETE ACCOUNT -->
+    <div class="card">
+      <h2><span class="badge del">DELETE</span> /me — Supprimer mon compte</h2>
+      <p style="font-size:12px;color:#8b949e;margin-bottom:12px">Soft delete — le compte peut être restauré par un admin.</p>
+      <button class="btn btn-red" id="btn-delete-account">Supprimer mon compte</button>
+    </div>
+
+    <!-- ADDRESSES -->
+    <div class="card">
+      <h2><span class="badge get">GET</span> /me/addresses — Mes adresses</h2>
+      <button class="btn btn-blue" id="btn-list-addr">Charger</button>
+      <div class="result-box mt-8" id="addr-list-result">
+        <pre id="addr-list-json"></pre>
+      </div>
+    </div>
+
+    <!-- ADD ADDRESS -->
+    <div class="card">
+      <h2><span class="badge post">POST</span> /me/addresses — Ajouter</h2>
+      <div class="form-group">
+        <label>Libellé</label>
+        <input type="text" id="addr-label" placeholder="Maison, Bureau...">
+      </div>
+      <div class="form-group">
+        <label>Rue *</label>
+        <input type="text" id="addr-street" placeholder="12 rue de la Paix">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ville *</label>
+          <input type="text" id="addr-city" placeholder="Paris">
+        </div>
+        <div class="form-group">
+          <label>Code postal *</label>
+          <input type="text" id="addr-zip" placeholder="75001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pays *</label>
+          <input type="text" id="addr-country" placeholder="France">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:8px;padding-bottom:12px">
+          <input type="checkbox" id="addr-default"> <label for="addr-default" style="margin:0">Par défaut</label>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-addr">Ajouter</button>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="card">
+      <h2><span class="badge get">GET</span> /me/favorites — Mes favoris (MongoDB)</h2>
+      <button class="btn btn-blue" id="btn-list-favs">Charger</button>
+      <div class="result-box mt-8" id="fav-list-result">
+        <pre id="fav-list-json"></pre>
+      </div>
+    </div>
+
+    <!-- ADD/REMOVE FAVORITE -->
+    <div class="card">
+      <h2>Favoris — Ajouter / Retirer</h2>
+      <div class="form-group">
+        <label>ID de l'annonce</label>
+        <input type="text" id="fav-ad-id" placeholder="id-annonce-123">
+      </div>
+      <div class="flex-row">
+        <button class="btn btn-primary" id="btn-add-fav">Ajouter</button>
+        <button class="btn btn-red" id="btn-remove-fav">Retirer</button>
+        <button class="btn btn-blue" id="btn-check-fav">Vérifier</button>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="card full">
+      <h2><span class="badge get">ADMIN</span> Gestion des utilisateurs (rôle admin requis)</h2>
+      <div class="flex-row">
+        <button class="btn btn-purple" id="btn-admin-list">Lister users</button>
+        <button class="btn btn-blue" id="btn-admin-roles">Lister rôles</button>
+      </div>
+      <div class="form-row mt-12">
+        <div class="form-group">
+          <label>User ID (pour actions admin)</label>
+          <input type="text" id="admin-user-id" placeholder="uuid-du-user">
+        </div>
+        <div class="form-group">
+          <label>Nouveau Role ID</label>
+          <input type="number" id="admin-role-id" placeholder="1, 2, 3 ou 4">
+        </div>
+      </div>
+      <div class="flex-row">
+        <button class="btn btn-orange" id="btn-admin-role">Changer rôle</button>
+        <button class="btn btn-red" id="btn-admin-delete">Supprimer user</button>
+        <button class="btn btn-primary" id="btn-admin-restore">Restaurer user</button>
+      </div>
+      <div class="result-box mt-8" id="admin-result">
+        <pre id="admin-json"></pre>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card full">
+      <h2>Console</h2>
+      <div id="log-output"></div>
+    </div>
+
+  </div>
+
+  <script src="/test.js"></script>
+</body>
+</html>
