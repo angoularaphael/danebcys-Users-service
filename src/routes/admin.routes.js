@@ -15,8 +15,12 @@ router.get('/roles', adminCtrl.getRoles);
 router.get('/users', adminCtrl.listUsers);
 router.get('/users/:id', adminCtrl.getUser);
 router.put('/users/:id/role', adminCtrl.updateUserRole);
-router.put('/users/:id/premium', adminCtrl.updateUserPremium);
 router.delete('/users/:id', adminCtrl.deleteUser);
 router.put('/users/:id/restore', adminCtrl.restoreUser);
+
+// ─── Gestion des abonnements (proxy Subscriptions-service) ──────────
+router.get('/subscriptions/pending', adminCtrl.listPendingSubscriptions);
+router.put('/subscriptions/:id/approve', adminCtrl.approveSubscription);
+router.put('/subscriptions/:id/reject', adminCtrl.rejectSubscription);
 
 module.exports = router;

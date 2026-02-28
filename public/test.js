@@ -96,13 +96,13 @@ $('#btn-update-profile').addEventListener('click', async () => {
   } catch (_e) { /* logged */ }
 });
 
-$('#btn-premium').addEventListener('click', async () => {
+$('#btn-subscription').addEventListener('click', async () => {
   try {
     const premiumLevel = $('#premium-level').value;
     if (!premiumLevel) { log('Sélectionnez un niveau', 'warn'); return; }
     const studentProof = $('#student-proof').value.trim() || undefined;
-    const data = await apiCall('PUT', `${API}/me/premium`, { premiumLevel, studentProof });
-    log(`Premium : ${data.user.premiumLevel}`, 'ok');
+    const data = await apiCall('POST', `${API}/me/subscription`, { premiumLevel, studentProof });
+    log(data.message || 'Demande envoyée', 'ok');
   } catch (_e) { /* logged */ }
 });
 
@@ -192,6 +192,14 @@ $('#btn-admin-roles').addEventListener('click', async () => {
     const data = await apiCall('GET', `${API}/admin/roles`);
     showResult('#admin-result', '#admin-json', data);
     log(`${data.roles.length} rôle(s) disponible(s)`, 'ok');
+  } catch (_e) { /* logged */ }
+});
+
+$('#btn-admin-subscriptions').addEventListener('click', async () => {
+  try {
+    const data = await apiCall('GET', `${API}/admin/subscriptions/pending`);
+    showResult('#admin-result', '#admin-json', data);
+    log(`${(data.subscriptions || []).length} demande(s) en attente`, 'ok');
   } catch (_e) { /* logged */ }
 });
 

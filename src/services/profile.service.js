@@ -25,18 +25,6 @@ async function deleteAccount(userId) {
   await authClient.softDeleteUser(userId);
 }
 
-async function requestPremium(userId, premiumLevel, studentProof) {
-  const valid = ['premium', 'premium_avancee', 'etudiant'];
-  if (!valid.includes(premiumLevel)) {
-    throw new BadRequestError(`Niveau invalide. Valeurs acceptées : ${valid.join(', ')}`);
-  }
-  if (premiumLevel === 'etudiant' && !studentProof) {
-    throw new BadRequestError('Justificatif étudiant requis pour le niveau étudiant');
-  }
-  const { user } = await authClient.updateUserPremium(userId, premiumLevel, studentProof);
-  return formatUser(user);
-}
-
 function formatUser(row) {
   return {
     id: row.id,
@@ -58,4 +46,4 @@ function formatUser(row) {
   };
 }
 
-module.exports = { getProfile, updateProfile, deleteAccount, requestPremium, formatUser };
+module.exports = { getProfile, updateProfile, deleteAccount, formatUser };

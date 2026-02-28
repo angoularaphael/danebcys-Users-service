@@ -226,9 +226,10 @@
       <button class="btn btn-orange" id="btn-update-profile">Mettre à jour</button>
     </div>
 
-    <!-- PREMIUM -->
+    <!-- ABONNEMENT (via POST /me/subscription → Subscriptions-service) -->
     <div class="card">
-      <h2><span class="badge put">PUT</span> /me/premium — Abonnement</h2>
+      <h2><span class="badge post">POST</span> /me/subscription — Demander un abonnement</h2>
+      <p style="font-size:12px;color:#8b949e;margin-bottom:12px;">L'admin validera la demande (1 mois à partir du jour de validation).</p>
       <div class="form-group">
         <label>Niveau Premium</label>
         <select id="premium-level">
@@ -239,10 +240,10 @@
         </select>
       </div>
       <div class="form-group">
-        <label>Justificatif étudiant (URL/chemin)</label>
+        <label>Justificatif étudiant (requis si Étudiant)</label>
         <input type="text" id="student-proof" placeholder="lien vers justificatif">
       </div>
-      <button class="btn btn-purple" id="btn-premium">Demander</button>
+      <button class="btn btn-purple" id="btn-subscription">Demander</button>
     </div>
 
     <!-- DELETE ACCOUNT -->
@@ -294,9 +295,9 @@
       <button class="btn btn-primary" id="btn-add-addr">Ajouter</button>
     </div>
 
-    <!-- FAVORITES -->
+    <!-- FAVORITES (point d'entrée unique) -->
     <div class="card">
-      <h2><span class="badge get">GET</span> /me/favorites — Mes favoris (MongoDB)</h2>
+      <h2><span class="badge get">GET</span> /me/favorites — Mes favoris</h2>
       <button class="btn btn-blue" id="btn-list-favs">Charger</button>
       <div class="result-box mt-8" id="fav-list-result">
         <pre id="fav-list-json"></pre>
@@ -307,8 +308,8 @@
     <div class="card">
       <h2>Favoris — Ajouter / Retirer</h2>
       <div class="form-group">
-        <label>ID de l'annonce</label>
-        <input type="text" id="fav-ad-id" placeholder="id-annonce-123">
+        <label>ID produit / annonce</label>
+        <input type="text" id="fav-ad-id" placeholder="prod-xxx ou UUID">
       </div>
       <div class="flex-row">
         <button class="btn btn-primary" id="btn-add-fav">Ajouter</button>
@@ -323,6 +324,7 @@
       <div class="flex-row">
         <button class="btn btn-purple" id="btn-admin-list">Lister users</button>
         <button class="btn btn-blue" id="btn-admin-roles">Lister rôles</button>
+        <button class="btn btn-blue" id="btn-admin-subscriptions">Demandes abonnements</button>
       </div>
       <div class="form-row mt-12">
         <div class="form-group">

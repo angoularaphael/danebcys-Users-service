@@ -13,7 +13,19 @@ router.use(authenticate, userLimiter);
 router.get('/me', profileCtrl.getMyProfile);
 router.put('/me', profileCtrl.updateMyProfile);
 router.delete('/me', profileCtrl.deleteMyAccount);
-router.put('/me/premium', profileCtrl.requestPremium);
+
+// ─── Commandes (proxy vers Orders-service) ──────────────────────────
+router.get('/me/orders', profileCtrl.getMyOrders);
+
+// ─── Notifications (MongoDB) ────────────────────────────────────────
+router.get('/me/notifications', profileCtrl.getMyNotifications);
+router.get('/me/notifications/unread', profileCtrl.getUnreadCount);
+router.put('/me/notifications/read-all', profileCtrl.markAllNotificationsRead);
+router.put('/me/notifications/:id/read', profileCtrl.markNotificationRead);
+
+// ─── Abonnements / Subscriptions ────────────────────────────────────
+router.get('/me/subscription', profileCtrl.getMySubscription);
+router.post('/me/subscription', profileCtrl.createSubscription);
 
 // ─── Adresses ───────────────────────────────────────────────────────
 router.get('/me/addresses', addressCtrl.listAddresses);
@@ -29,5 +41,8 @@ router.get('/me/favorites/count', favoriteCtrl.countFavorites);
 router.get('/me/favorites/:adId/check', favoriteCtrl.checkFavorite);
 router.post('/me/favorites/:adId', favoriteCtrl.addFavorite);
 router.delete('/me/favorites/:adId', favoriteCtrl.removeFavorite);
+
+// ─── Profil public ──────────────────────────────────────────────────
+router.get('/:id', profileCtrl.getPublicProfile);
 
 module.exports = router;

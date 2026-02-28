@@ -1,0 +1,60 @@
+const http = require('http');
+const https = require('https');
+
+const NOTIFICATIONS_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3010';
+
+function proxy(method, path, authHeader, body = null) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(NOTIFICATIONS_URL);
+    const transport = url.protocol === 'https:' ? https : http;
+
+    const opts = {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path,
+      method,
+      headers: { 'Content-Type': 'application/json' }
+    };
+    if (authHeader) opts.headers['Authorization'] = authHeader;
+
+    const req = transport.request(opts, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode >= 400) {
+            const err = new Error(parsed.error || 'Notifications Service error');
+            err.statusCode = res.statusCode;
+            return reject(err);
+          }
+          resolve(parsed);
+        } catch (_e) {
+          reject(new Error('Réponse invalide'));
+        }
+      });
+    });
+    req.on('error', (e) => reject(new Error(`Notifications Service: ${e.message}`)));
+    req.setTimeout(5000, () => { req.destroy(); reject(new Error('Timeout')); });
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+async function listNotifications(authHeader, query = '') {
+  return proxy('GET', `/api/v1/notifications${query ? '?' + query : ''}`, authHeader);
+}
+
+async function getUnreadCount(authHeader) {
+  return proxy('GET', '/api/v1/notifications/unread/count', authHeader);
+}
+
+async function markAllAsRead(authHeader) {
+  return proxy('PUT', '/api/v1/notifications/read-all', authHeader);
+}
+
+async function markAsRead(authHeader, notificationId) {
+  return proxy('PUT', `/api/v1/notifications/${notificationId}/read`, authHeader);
+}
+
+module.exports = { listNotifications, getUnreadCount, markAllAsRead, markAsRead };

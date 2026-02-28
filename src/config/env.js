@@ -1,6 +1,5 @@
 const requiredVars = [
   'PG_HOST', 'PG_PORT', 'PG_DATABASE', 'PG_USER', 'PG_PASSWORD',
-  'MONGO_URI', 'MONGO_DB_NAME',
   'AUTH_SERVICE_URL', 'INTER_SERVICE_KEY'
 ];
 
@@ -16,12 +15,9 @@ module.exports = {
 
   PG_HOST: process.env.PG_HOST || 'localhost',
   PG_PORT: parseInt(process.env.PG_PORT, 10) || 5432,
-  PG_DATABASE: process.env.PG_DATABASE || 'danebcys_users',
+  PG_DATABASE: process.env.PG_DATABASE || 'danebcys',
   PG_USER: process.env.PG_USER || 'postgres',
   PG_PASSWORD: process.env.PG_PASSWORD || 'postgres',
-
-  MONGO_URI: process.env.MONGO_URI,
-  MONGO_DB_NAME: process.env.MONGO_DB_NAME || 'danebcys',
 
   AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
   INTER_SERVICE_KEY: process.env.INTER_SERVICE_KEY,

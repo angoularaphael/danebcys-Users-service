@@ -1,6 +1,11 @@
 const authClient = require('../services/authClient');
+const subscriptionsProxy = require('../services/subscriptionsProxy');
 const { formatUser } = require('../services/profile.service');
 const { BadRequestError } = require('../utils/errors');
+
+function getAuthHeader(req) {
+  return req.headers.authorization || null;
+}
 
 async function listUsers(req, res, next) {
   try {
@@ -35,17 +40,6 @@ async function updateUserRole(req, res, next) {
   }
 }
 
-async function updateUserPremium(req, res, next) {
-  try {
-    const { premiumLevel, studentProof } = req.body;
-    if (!premiumLevel) throw new BadRequestError('premiumLevel requis');
-    const { user } = await authClient.updateUserPremium(req.params.id, premiumLevel, studentProof);
-    res.json({ user, message: 'Niveau premium mis à jour' });
-  } catch (err) {
-    next(err);
-  }
-}
-
 async function deleteUser(req, res, next) {
   try {
     await authClient.softDeleteUser(req.params.id);
@@ -73,4 +67,45 @@ async function getRoles(_req, res, next) {
   }
 }
 
-module.exports = { listUsers, getUser, updateUserRole, updateUserPremium, deleteUser, restoreUser, getRoles };
+async function listPendingSubscriptions(req, res, next) {
+  try {
+    const qs = new URLSearchParams(req.query).toString();
+    const data = await subscriptionsProxy.listPendingSubscriptions(getAuthHeader(req), qs);
+    res.json(data);
+  } catch (err) {
+    if (err.message?.includes('Subscriptions Service')) {
+      return res.status(503).json({ error: 'Service abonnements indisponible' });
+    }
+    next(err);
+  }
+}
+
+async function approveSubscription(req, res, next) {
+  try {
+    const { startDate, endDate } = req.body;
+    const data = await subscriptionsProxy.approveSubscription(getAuthHeader(req), req.params.id, { startDate, endDate });
+    res.json(data);
+  } catch (err) {
+    if (err.message?.includes('Subscriptions Service')) {
+      return res.status(503).json({ error: 'Service abonnements indisponible' });
+    }
+    next(err);
+  }
+}
+
+async function rejectSubscription(req, res, next) {
+  try {
+    const data = await subscriptionsProxy.rejectSubscription(getAuthHeader(req), req.params.id);
+    res.json(data);
+  } catch (err) {
+    if (err.message?.includes('Subscriptions Service')) {
+      return res.status(503).json({ error: 'Service abonnements indisponible' });
+    }
+    next(err);
+  }
+}
+
+module.exports = {
+  listUsers, getUser, updateUserRole, deleteUser, restoreUser, getRoles,
+  listPendingSubscriptions, approveSubscription, rejectSubscription
+};

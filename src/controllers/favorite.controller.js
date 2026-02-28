@@ -1,13 +1,22 @@
-const favoriteService = require('../services/favorite.service');
+const favoritesProxy = require('../services/favoritesProxy');
 const { BadRequestError } = require('../utils/errors');
+
+function getAuthHeader(req) {
+  const h = req.headers.authorization;
+  return h || null;
+}
 
 async function listFavorites(req, res, next) {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
-    const result = await favoriteService.listFavorites(req.user.id, { page, limit });
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 20;
+    const qs = new URLSearchParams({ page, limit }).toString();
+    const result = await favoritesProxy.listFavorites(getAuthHeader(req), qs);
     res.json(result);
   } catch (err) {
+    if (err.message?.includes('Favorites Service')) {
+      return res.status(503).json({ error: 'Service favoris indisponible' });
+    }
     next(err);
   }
 }
@@ -16,9 +25,12 @@ async function addFavorite(req, res, next) {
   try {
     const { adId } = req.params;
     if (!adId) throw new BadRequestError('adId requis');
-    const favorite = await favoriteService.addFavorite(req.user.id, adId);
-    res.status(201).json({ favorite, message: 'Ajouté aux favoris' });
+    const result = await favoritesProxy.addFavorite(getAuthHeader(req), adId);
+    res.status(201).json(result);
   } catch (err) {
+    if (err.message?.includes('Favorites Service')) {
+      return res.status(503).json({ error: 'Service favoris indisponible' });
+    }
     next(err);
   }
 }
@@ -27,9 +39,12 @@ async function removeFavorite(req, res, next) {
   try {
     const { adId } = req.params;
     if (!adId) throw new BadRequestError('adId requis');
-    await favoriteService.removeFavorite(req.user.id, adId);
-    res.json({ message: 'Retiré des favoris' });
+    const result = await favoritesProxy.removeFavorite(getAuthHeader(req), adId);
+    res.json(result);
   } catch (err) {
+    if (err.message?.includes('Favorites Service')) {
+      return res.status(503).json({ error: 'Service favoris indisponible' });
+    }
     next(err);
   }
 }
@@ -37,18 +52,24 @@ async function removeFavorite(req, res, next) {
 async function checkFavorite(req, res, next) {
   try {
     const { adId } = req.params;
-    const isFav = await favoriteService.isFavorite(req.user.id, adId);
-    res.json({ isFavorite: isFav });
+    const result = await favoritesProxy.checkFavorite(getAuthHeader(req), adId);
+    res.json(result);
   } catch (err) {
+    if (err.message?.includes('Favorites Service')) {
+      return res.status(503).json({ error: 'Service favoris indisponible' });
+    }
     next(err);
   }
 }
 
 async function countFavorites(req, res, next) {
   try {
-    const count = await favoriteService.countFavorites(req.user.id);
-    res.json({ count });
+    const result = await favoritesProxy.countFavorites(getAuthHeader(req));
+    res.json(result);
   } catch (err) {
+    if (err.message?.includes('Favorites Service')) {
+      return res.status(503).json({ error: 'Service favoris indisponible' });
+    }
     next(err);
   }
 }
