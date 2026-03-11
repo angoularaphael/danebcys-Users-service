@@ -128,9 +128,35 @@ async function getMySubscription(req, res, next) {
 
 async function createSubscription(req, res, next) {
   try {
-    const { premiumLevel, studentProof } = req.body;
-    if (!premiumLevel) throw new BadRequestError('premiumLevel requis');
-    const data = await subscriptionsProxy.createSubscription(getAuthHeader(req), { premiumLevel, studentProof });
+    const {
+      premiumLevel,
+      studentProof,
+      subscriptionType,
+      sellerPlan,
+      billingCycle,
+      paymentMethod,
+      cardNumber,
+      expiryMonth,
+      expiryYear,
+      cvv,
+      holderName
+    } = req.body;
+    if (!subscriptionType && !premiumLevel) {
+      throw new BadRequestError('subscriptionType ou premiumLevel requis');
+    }
+    const data = await subscriptionsProxy.createSubscription(getAuthHeader(req), {
+      premiumLevel,
+      studentProof,
+      subscriptionType,
+      sellerPlan,
+      billingCycle,
+      paymentMethod,
+      cardNumber,
+      expiryMonth,
+      expiryYear,
+      cvv,
+      holderName
+    });
     res.status(201).json(data);
   } catch (err) {
     if (err.message?.includes('Subscriptions Service')) {

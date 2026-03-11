@@ -1,3 +1,60 @@
+# Users-service
+
+## Rôle
+BFF utilisateur: profil, adresses, favoris, notifications, abonnements, commandes (avec proxy vers autres services).
+
+## Mise à jour 2026-03 (entrée API)
+- Accès client recommandé via `Auth-service` (`http://localhost:3001/api/v1/users/*`).
+- L'exposition directe du port `3002` est réservée aux tests internes/local.
+
+## Port et santé
+- Port par défaut: `3002`
+- Healthcheck: `GET /health`
+
+## Variables d'environnement (canoniques)
+- `PORT`, `NODE_ENV`
+- `PG_HOST`, `PG_PORT`, `PG_DATABASE`, `PG_USER`, `PG_PASSWORD`
+- `AUTH_SERVICE_URL`, `INTER_SERVICE_KEY`
+- `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`
+
+## Routes publiques (`/api/v1/users`)
+- `GET /me`, `PUT /me`, `DELETE /me`
+- `GET /me/orders`
+- `GET /me/notifications`
+- `GET /me/notifications/unread`
+- `PUT /me/notifications/read-all`
+- `PUT /me/notifications/:id/read`
+- `GET /me/subscription`, `POST /me/subscription`
+- `GET /me/addresses`, `POST /me/addresses`
+- `GET /me/addresses/:id`, `PUT /me/addresses/:id`, `DELETE /me/addresses/:id`
+- `PUT /me/addresses/:id/default`
+- `GET /me/favorites`, `GET /me/favorites/count`, `GET /me/favorites/:adId/check`
+- `POST /me/favorites/:adId`, `DELETE /me/favorites/:adId`
+- `GET /:id` (profil public)
+
+## Routes admin (`/api/v1/users/admin`)
+- `GET /roles`
+- `GET /users`
+- `GET /users/:id`
+- `PUT /users/:id/role`
+- `DELETE /users/:id`
+- `PUT /users/:id/restore`
+- `GET /subscriptions/pending`
+- `PUT /subscriptions/:id/approve`
+- `PUT /subscriptions/:id/reject`
+
+## Routes internes (`/internal`, protégées X-Service-Key)
+- `GET /favorites/:userId/count`
+- `GET /favorites/:userId/:adId`
+
+## Dépendances
+- PostgreSQL
+- `Auth-service`
+- `Orders-service`, `Favorites-service`, `Notifications-service`, `Subscriptions-service`
+
+## Démarrage
+- Local: `npm run dev`
+- Docker: via `docker compose --env-file .env.docker up --build`
 # Users Service — Documentation technique
 
 > Microservice de gestion des profils utilisateurs pour **DANEBCYS**.  
@@ -109,6 +166,13 @@ Les notifications sont gérées par **Notifications-service** (port 3010). Users
 ## 7. Commandes (proxy Orders Service)
 
 `GET /me/orders` est un proxy vers Orders Service `GET /internal/orders/user/:userId`.
+
+### Vos paiements (méthodes de paiement + paiements effectués)
+
+| Donnée | Endpoint | Description |
+|--------|----------|-------------|
+| Paiements effectués (historique) | `GET /me/orders` | Liste des commandes avec `payment_status` (pending, pending_approval, paid, rejected) |
+| Méthodes de paiement stockées | — | Non implémenté ; saisie carte à chaque commande via Orders-service |
 
 ---
 
