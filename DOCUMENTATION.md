@@ -55,6 +55,12 @@ BFF utilisateur: profil, adresses, favoris, notifications, abonnements, commande
 ## Démarrage
 - Local: `npm run dev`
 - Docker: via `docker compose --env-file .env.docker up --build`
+
+## Secrets & configuration
+- **Fichier source** : `Users-service/.env` (non versionné par Git).
+- **Copie locale de référence** : `Secrets-Danebcys/Users-service/.env`, synchronisée depuis la racine du monorepo avec `.\scripts\sync-secrets-danebcys.ps1` (PowerShell).
+- Ne jamais committer les valeurs sensibles.
+
 # Users Service — Documentation technique
 
 > Microservice de gestion des profils utilisateurs pour **DANEBCYS**.  
