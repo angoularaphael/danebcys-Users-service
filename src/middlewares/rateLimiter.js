@@ -1,11 +1,10 @@
+// Limite le nombre de requêtes par utilisateur ou par IP
 const env = require('../config/env');
 
-/**
- * Rate limiter maison, basé sur le user ID (pas l'IP).
- * Même pattern que le Auth Service — aucune librairie externe.
- */
+// Stockage en mémoire des compteurs de rate limiting, indexé par clé (user ID ou IP).
 const store = new Map();
 
+// Nettoyage périodique (toutes les 60 s) des entrées expirées du store.
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of store) {
@@ -13,6 +12,7 @@ setInterval(() => {
   }
 }, 60_000).unref();
 
+// Fabrique un middleware Express limitant le nombre de requêtes par clé sur une fenêtre glissante.
 function createLimiter({ windowMs, max, keyFn }) {
   return (req, res, next) => {
     const key = keyFn(req);
@@ -41,10 +41,19 @@ function createLimiter({ windowMs, max, keyFn }) {
   };
 }
 
+// Limiteur par utilisateur authentifié — appliqué aux routes profil, favoris et /users/*.
 const userLimiter = createLimiter({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX_REQUESTS,
   keyFn: (req) => req.user ? `user:${req.user.id}` : null
 });
 
-module.exports = { createLimiter, userLimiter };
+// Limiteur pour les demandes d'abonnement — clé user si connecté, sinon IP cliente.
+// Évite le spam sur POST /subscriptions avant authentification.
+const subscriptionLimiter = createLimiter({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX_REQUESTS,
+  keyFn: (req) => (req.user ? `user:${req.user.id}` : `ip:${req.clientIp || req.ip || 'unknown'}`)
+});
+
+module.exports = { createLimiter, userLimiter, subscriptionLimiter };

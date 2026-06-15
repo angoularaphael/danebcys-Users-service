@@ -1,8 +1,11 @@
+// Proxy des notifications vers Communication-service
 const http = require('http');
 const https = require('https');
 
-const NOTIFICATIONS_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3010';
+// URL du Communication-service port 3006.
+const NOTIFICATIONS_URL = process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3006';
 
+// Redirige une requête vers Communication-service port 3006.
 function proxy(method, path, authHeader, body = null) {
   return new Promise((resolve, reject) => {
     const url = new URL(NOTIFICATIONS_URL);
@@ -41,18 +44,22 @@ function proxy(method, path, authHeader, body = null) {
   });
 }
 
+// Liste les notifications de l'utilisateur — communication-service:3006 GET /api/v1/notifications.
 async function listNotifications(authHeader, query = '') {
   return proxy('GET', `/api/v1/notifications${query ? '?' + query : ''}`, authHeader);
 }
 
+// Retourne le nombre de notifications non lues — communication-service:3006 GET /api/v1/notifications/unread/count.
 async function getUnreadCount(authHeader) {
   return proxy('GET', '/api/v1/notifications/unread/count', authHeader);
 }
 
+// Marque toutes les notifications comme lues — communication-service:3006 PUT /api/v1/notifications/read-all.
 async function markAllAsRead(authHeader) {
   return proxy('PUT', '/api/v1/notifications/read-all', authHeader);
 }
 
+// Marque une notification comme lue — communication-service:3006 PUT /api/v1/notifications/:id/read.
 async function markAsRead(authHeader, notificationId) {
   return proxy('PUT', `/api/v1/notifications/${notificationId}/read`, authHeader);
 }

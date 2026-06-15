@@ -1,3 +1,4 @@
+// Routes profil et adresses /api/v1/users
 const { Router } = require('express');
 const profileCtrl = require('../controllers/profile.controller');
 const addressCtrl = require('../controllers/address.controller');
@@ -5,6 +6,7 @@ const favoriteCtrl = require('../controllers/favorite.controller');
 const { authenticate } = require('../middlewares/auth');
 const { userLimiter } = require('../middlewares/rateLimiter');
 
+// Routeur principal des utilisateurs (/api/v1/users).
 const router = Router();
 
 router.use(authenticate, userLimiter);

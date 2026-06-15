@@ -1,14 +1,17 @@
+// Contrôleurs HTTP : profil utilisateur (lecture, mise à jour, suppression)
 const profileService = require('../services/profile.service');
 const { getUserOrders } = require('../services/ordersClient');
 const notificationsProxy = require('../services/notificationsProxy');
-const subscriptionsProxy = require('../services/subscriptionsProxy');
+const subscriptionService = require('../services/subscription.service');
 const { getUser } = require('../services/authClient');
 const { BadRequestError } = require('../utils/errors');
 
+// Extrait l'en-tête Authorization Bearer de la requête entrante.
 function getAuthHeader(req) {
   return req.headers.authorization || null;
 }
 
+// Retourne le profil complet de l'utilisateur authentifié (via auth-service:3001).
 async function getMyProfile(req, res, next) {
   try {
     const profile = await profileService.getProfile(req.user.id);
@@ -18,6 +21,7 @@ async function getMyProfile(req, res, next) {
   }
 }
 
+// Met à jour le profil de l'utilisateur authentifié (via auth-service:3001).
 async function updateMyProfile(req, res, next) {
   try {
     const { username, firstName, lastName, phone, country } = req.body;
@@ -30,6 +34,7 @@ async function updateMyProfile(req, res, next) {
   }
 }
 
+// Supprime le compte de l'utilisateur authentifié (soft delete via auth-service:3001).
 async function deleteMyAccount(req, res, next) {
   try {
     await profileService.deleteAccount(req.user.id);
@@ -39,6 +44,7 @@ async function deleteMyAccount(req, res, next) {
   }
 }
 
+// Retourne le profil public d'un utilisateur (champs limités, via auth-service:3001).
 async function getPublicProfile(req, res, next) {
   try {
     const user = await getUser(req.params.id);
@@ -50,6 +56,7 @@ async function getPublicProfile(req, res, next) {
   }
 }
 
+// Liste paginée des commandes de l'utilisateur — proxy vers orders-service:3005.
 async function getMyOrders(req, res, next) {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -64,6 +71,7 @@ async function getMyOrders(req, res, next) {
   }
 }
 
+// Liste les notifications de l'utilisateur — proxy vers communication-service:3006.
 async function getMyNotifications(req, res, next) {
   try {
     const qs = new URLSearchParams(req.query).toString();
@@ -77,6 +85,7 @@ async function getMyNotifications(req, res, next) {
   }
 }
 
+// Marque une notification comme lue — proxy vers communication-service:3006.
 async function markNotificationRead(req, res, next) {
   try {
     const data = await notificationsProxy.markAsRead(getAuthHeader(req), req.params.id);
@@ -90,6 +99,7 @@ async function markNotificationRead(req, res, next) {
   }
 }
 
+// Marque toutes les notifications comme lues — proxy vers communication-service:3006.
 async function markAllNotificationsRead(req, res, next) {
   try {
     const data = await notificationsProxy.markAllAsRead(getAuthHeader(req));
@@ -102,6 +112,7 @@ async function markAllNotificationsRead(req, res, next) {
   }
 }
 
+// Retourne le nombre de notifications non lues — proxy vers communication-service:3006.
 async function getUnreadCount(req, res, next) {
   try {
     const data = await notificationsProxy.getUnreadCount(getAuthHeader(req));
@@ -114,54 +125,29 @@ async function getUnreadCount(req, res, next) {
   }
 }
 
+// Retourne l'abonnement actif ou en attente de l'utilisateur authentifié (MongoDB local).
 async function getMySubscription(req, res, next) {
   try {
-    const data = await subscriptionsProxy.getMySubscription(getAuthHeader(req));
-    res.json(data);
+    const subscription = await subscriptionService.getMySubscription(req.user.id, req.query.type);
+    res.json({ subscription });
   } catch (err) {
-    if (err.message?.includes('Subscriptions Service')) {
-      return res.status(503).json({ error: 'Service abonnements indisponible' });
-    }
     next(err);
   }
 }
 
+// Soumet une demande d'abonnement premium ou vendeur (MongoDB local + notification admins).
 async function createSubscription(req, res, next) {
   try {
-    const {
-      premiumLevel,
-      studentProof,
-      subscriptionType,
-      sellerPlan,
-      billingCycle,
-      paymentMethod,
-      cardNumber,
-      expiryMonth,
-      expiryYear,
-      cvv,
-      holderName
-    } = req.body;
+    const { subscriptionType, premiumLevel } = req.body || {};
     if (!subscriptionType && !premiumLevel) {
       throw new BadRequestError('subscriptionType ou premiumLevel requis');
     }
-    const data = await subscriptionsProxy.createSubscription(getAuthHeader(req), {
-      premiumLevel,
-      studentProof,
-      subscriptionType,
-      sellerPlan,
-      billingCycle,
-      paymentMethod,
-      cardNumber,
-      expiryMonth,
-      expiryYear,
-      cvv,
-      holderName
+    const subscription = await subscriptionService.createRequest(req.user.id, req.body || {});
+    res.status(201).json({
+      subscription,
+      message: 'Paiement enregistre. La demande est en attente de validation administrateur.'
     });
-    res.status(201).json(data);
   } catch (err) {
-    if (err.message?.includes('Subscriptions Service')) {
-      return res.status(503).json({ error: 'Service abonnements indisponible' });
-    }
     next(err);
   }
 }

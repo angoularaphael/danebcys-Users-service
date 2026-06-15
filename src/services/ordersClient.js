@@ -1,9 +1,12 @@
+// Client HTTP vers Orders-service:3005
 const http = require('http');
 const https = require('https');
 const env = require('../config/env');
 
+// URL du Orders-service port 3005.
 const ORDERS_URL = process.env.ORDERS_SERVICE_URL || 'http://localhost:3005';
 
+// Appelle Orders-service port 3005 avec la clé inter-services.
 function callOrders(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const url = new URL(ORDERS_URL);
@@ -49,6 +52,7 @@ function callOrders(method, path, body = null) {
   });
 }
 
+// Récupère les commandes paginées d'un utilisateur — orders-service:3005 GET /internal/orders/user/:userId.
 async function getUserOrders(userId, page = 1, limit = 20) {
   return callOrders('GET', `/internal/orders/user/${userId}?page=${page}&limit=${limit}`);
 }

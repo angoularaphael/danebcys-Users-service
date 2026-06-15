@@ -1,12 +1,15 @@
+// Profil utilisateur : lecture et mise à jour via auth-service
 const authClient = require('./authClient');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 
+// Récupère le profil complet d'un utilisateur via auth-service:3001.
 async function getProfile(userId) {
   const { user } = await authClient.getUser(userId);
   if (!user) throw new NotFoundError('Utilisateur non trouvé');
   return formatUser(user);
 }
 
+// Met à jour les champs autorisés du profil via auth-service:3001.
 async function updateProfile(userId, data) {
   const allowed = ['username', 'firstName', 'lastName', 'phone', 'country'];
   const update = {};
@@ -21,10 +24,12 @@ async function updateProfile(userId, data) {
   return formatUser(user);
 }
 
+// Supprime logiquement le compte utilisateur via auth-service:3001.
 async function deleteAccount(userId) {
   await authClient.softDeleteUser(userId);
 }
 
+// Convertit une ligne utilisateur auth-service en objet profil au format API (camelCase).
 function formatUser(row) {
   return {
     id: row.id,

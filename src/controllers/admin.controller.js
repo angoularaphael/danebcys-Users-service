@@ -1,12 +1,10 @@
+// Contrôleurs HTTP admin : gestion des utilisateurs et abonnements
 const authClient = require('../services/authClient');
-const subscriptionsProxy = require('../services/subscriptionsProxy');
+const subscriptionService = require('../services/subscription.service');
 const { formatUser } = require('../services/profile.service');
 const { BadRequestError } = require('../utils/errors');
 
-function getAuthHeader(req) {
-  return req.headers.authorization || null;
-}
-
+// Liste paginée des utilisateurs — délègue au auth-service:3001 (GET /internal/users).
 async function listUsers(req, res, next) {
   try {
     const { page, limit, search, role, deleted } = req.query;
@@ -20,6 +18,7 @@ async function listUsers(req, res, next) {
   }
 }
 
+// Détail d'un utilisateur par ID — délègue au auth-service:3001 (GET /internal/users/:id).
 async function getUser(req, res, next) {
   try {
     const { user } = await authClient.getUser(req.params.id);
@@ -29,6 +28,7 @@ async function getUser(req, res, next) {
   }
 }
 
+// Modifie le rôle d'un utilisateur — délègue au auth-service:3001 (PUT /internal/users/:id/role).
 async function updateUserRole(req, res, next) {
   try {
     const { roleId } = req.body;
@@ -40,6 +40,7 @@ async function updateUserRole(req, res, next) {
   }
 }
 
+// Suppression logique d'un utilisateur — délègue au auth-service:3001 (DELETE /internal/users/:id).
 async function deleteUser(req, res, next) {
   try {
     await authClient.softDeleteUser(req.params.id);
@@ -49,6 +50,7 @@ async function deleteUser(req, res, next) {
   }
 }
 
+// Restaure un utilisateur supprimé — délègue au auth-service:3001 (PUT /internal/users/:id/restore).
 async function restoreUser(req, res, next) {
   try {
     const result = await authClient.restoreUser(req.params.id);
@@ -58,6 +60,7 @@ async function restoreUser(req, res, next) {
   }
 }
 
+// Liste des rôles disponibles — délègue au auth-service:3001 (GET /internal/roles).
 async function getRoles(_req, res, next) {
   try {
     const result = await authClient.getRoles();
@@ -67,40 +70,36 @@ async function getRoles(_req, res, next) {
   }
 }
 
+// Liste paginée des demandes d'abonnement en attente (MongoDB local).
 async function listPendingSubscriptions(req, res, next) {
   try {
-    const qs = new URLSearchParams(req.query).toString();
-    const data = await subscriptionsProxy.listPendingSubscriptions(getAuthHeader(req), qs);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const data = await subscriptionService.listPending(page, limit, req.query.type);
     res.json(data);
   } catch (err) {
-    if (err.message?.includes('Subscriptions Service')) {
-      return res.status(503).json({ error: 'Service abonnements indisponible' });
-    }
     next(err);
   }
 }
 
+// Valide une demande d'abonnement (1 mois premium ou 12 mois vendeur).
+// Met à jour auth-service:3001 et notifie via communication-service:3006.
 async function approveSubscription(req, res, next) {
   try {
-    const { startDate, endDate } = req.body;
-    const data = await subscriptionsProxy.approveSubscription(getAuthHeader(req), req.params.id, { startDate, endDate });
-    res.json(data);
+    const subscription = await subscriptionService.approve(req.params.id);
+    res.json({ subscription, message: 'Abonnement validé (1 mois)' });
   } catch (err) {
-    if (err.message?.includes('Subscriptions Service')) {
-      return res.status(503).json({ error: 'Service abonnements indisponible' });
-    }
     next(err);
   }
 }
 
+// Refuse une demande d'abonnement en attente.
+// Restaure le profil sur auth-service:3001 et notifie via communication-service:3006.
 async function rejectSubscription(req, res, next) {
   try {
-    const data = await subscriptionsProxy.rejectSubscription(getAuthHeader(req), req.params.id);
-    res.json(data);
+    const subscription = await subscriptionService.reject(req.params.id);
+    res.json({ subscription, message: 'Demande refusée' });
   } catch (err) {
-    if (err.message?.includes('Subscriptions Service')) {
-      return res.status(503).json({ error: 'Service abonnements indisponible' });
-    }
     next(err);
   }
 }

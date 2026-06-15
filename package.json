@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "test": "node --test tests/*.test.js",
     "db:init": "node -e \"require('dotenv').config();require('./src/config/database').initDB().then(() => process.exit(0)).catch((e) => {console.error(e);process.exit(1)})\""
   },
   "dependencies": {

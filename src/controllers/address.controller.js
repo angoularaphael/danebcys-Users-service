@@ -1,5 +1,7 @@
+// Contrôleurs HTTP : gestion des adresses de livraison
 const addressService = require('../services/address.service');
 
+// Liste toutes les adresses actives de l'utilisateur authentifié (PostgreSQL local).
 async function listAddresses(req, res, next) {
   try {
     const addresses = await addressService.listAddresses(req.user.id);
@@ -9,6 +11,7 @@ async function listAddresses(req, res, next) {
   }
 }
 
+// Récupère une adresse par son identifiant pour l'utilisateur authentifié.
 async function getAddress(req, res, next) {
   try {
     const address = await addressService.getAddress(req.user.id, req.params.id);
@@ -18,6 +21,7 @@ async function getAddress(req, res, next) {
   }
 }
 
+// Crée une nouvelle adresse de livraison pour l'utilisateur authentifié.
 async function createAddress(req, res, next) {
   try {
     const address = await addressService.createAddress(req.user.id, req.body);
@@ -27,6 +31,7 @@ async function createAddress(req, res, next) {
   }
 }
 
+// Met à jour une adresse existante de l'utilisateur authentifié.
 async function updateAddress(req, res, next) {
   try {
     const address = await addressService.updateAddress(req.user.id, req.params.id, req.body);
@@ -36,6 +41,7 @@ async function updateAddress(req, res, next) {
   }
 }
 
+// Supprime (soft delete) une adresse de l'utilisateur authentifié.
 async function deleteAddress(req, res, next) {
   try {
     await addressService.deleteAddress(req.user.id, req.params.id);
@@ -45,6 +51,7 @@ async function deleteAddress(req, res, next) {
   }
 }
 
+// Définit une adresse comme adresse par défaut de l'utilisateur authentifié.
 async function setDefault(req, res, next) {
   try {
     const address = await addressService.setDefault(req.user.id, req.params.id);

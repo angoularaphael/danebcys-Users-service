@@ -1,11 +1,8 @@
+// Vérifie le jeton Bearer via auth-service:3001
 const authClient = require('../services/authClient');
 const { UnauthorizedError } = require('../utils/errors');
 
-/**
- * Middleware d'authentification.
- * Valide le token via le Auth Service (appel HTTP interne).
- * Place req.user = { id, email, username, role }
- */
+// Vérifie le token JWT via Auth-service port 3001.
 async function authenticate(req, _res, next) {
   try {
     const header = req.headers.authorization;

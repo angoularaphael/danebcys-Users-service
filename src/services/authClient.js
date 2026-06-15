@@ -1,12 +1,9 @@
+// Client HTTP vers auth-service:3001 (utilisateurs, validation token)
 const http = require('http');
 const https = require('https');
 const env = require('../config/env');
 
-/**
- * Client HTTP natif pour appeler le Auth Service.
- * Pas d'axios, pas de node-fetch — uniquement http/https natifs.
- * Toutes les requêtes sont authentifiées via X-Service-Key.
- */
+// Appelle Auth-service port 3001 avec la clé inter-services.
 function callAuth(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const url = new URL(env.AUTH_SERVICE_URL);
@@ -52,18 +49,22 @@ function callAuth(method, path, body = null) {
   });
 }
 
+// Valide un token JWT — auth-service:3001 POST /internal/validate-token.
 async function validateToken(accessToken) {
   return callAuth('POST', '/internal/validate-token', { accessToken });
 }
 
+// Récupère un utilisateur par ID — auth-service:3001 GET /internal/users/:id.
 async function getUser(userId) {
   return callAuth('GET', `/internal/users/${userId}`);
 }
 
+// Met à jour les champs profil d'un utilisateur — auth-service:3001 PUT /internal/users/:id.
 async function updateUser(userId, data) {
   return callAuth('PUT', `/internal/users/${userId}`, data);
 }
 
+// Liste paginée des utilisateurs — auth-service:3001 GET /internal/users.
 async function listUsers(queryParams = {}) {
   const clean = {};
   for (const [k, v] of Object.entries(queryParams)) {
@@ -73,27 +74,40 @@ async function listUsers(queryParams = {}) {
   return callAuth('GET', `/internal/users${qs ? '?' + qs : ''}`);
 }
 
+// Modifie le rôle d'un utilisateur — auth-service:3001 PUT /internal/users/:id/role.
 async function updateUserRole(userId, roleId) {
   return callAuth('PUT', `/internal/users/${userId}/role`, { roleId });
 }
 
+// Met à jour le niveau premium d'un utilisateur — auth-service:3001 PUT /internal/users/:id/premium.
 async function updateUserPremium(userId, premiumLevel, studentProof) {
   return callAuth('PUT', `/internal/users/${userId}/premium`, { premiumLevel, studentProof });
 }
 
+// Suppression logique d'un utilisateur — auth-service:3001 DELETE /internal/users/:id.
 async function softDeleteUser(userId) {
   return callAuth('DELETE', `/internal/users/${userId}`);
 }
 
+// Restaure un utilisateur supprimé — auth-service:3001 PUT /internal/users/:id/restore.
 async function restoreUser(userId) {
   return callAuth('PUT', `/internal/users/${userId}/restore`);
 }
 
+// Liste tous les rôles disponibles — auth-service:3001 GET /internal/roles.
 async function getRoles() {
   return callAuth('GET', '/internal/roles');
 }
 
+// Récupère les utilisateurs ayant un rôle donné — auth-service:3001 GET /internal/users?role=...
+async function getUsersByRole(role) {
+  const path = `/internal/users?role=${encodeURIComponent(role)}&limit=100`;
+  const res = await callAuth('GET', path);
+  return res.users || [];
+}
+
 module.exports = {
   validateToken, getUser, updateUser, listUsers,
-  updateUserRole, updateUserPremium, softDeleteUser, restoreUser, getRoles
+  updateUserRole, updateUserPremium, softDeleteUser, restoreUser, getRoles,
+  getUsersByRole
 };

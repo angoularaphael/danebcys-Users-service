@@ -1,6 +1,8 @@
+// Gestion des adresses de livraison (PostgreSQL)
 const { query } = require('../config/database');
 const { NotFoundError, BadRequestError, ConflictError } = require('../utils/errors');
 
+// Liste toutes les adresses actives d'un utilisateur (PostgreSQL, table addresses).
 async function listAddresses(userId) {
   const result = await query(
     `SELECT id, label, street, city, zip_code, country, is_default, created_at, updated_at
@@ -12,6 +14,7 @@ async function listAddresses(userId) {
   return result.rows.map(formatAddress);
 }
 
+// Récupère une adresse par ID pour un utilisateur donné.
 async function getAddress(userId, addressId) {
   const result = await query(
     `SELECT id, label, street, city, zip_code, country, is_default, created_at, updated_at
@@ -23,6 +26,7 @@ async function getAddress(userId, addressId) {
   return formatAddress(result.rows[0]);
 }
 
+// Crée une nouvelle adresse ; réinitialise les autres si isDefault est true.
 async function createAddress(userId, data) {
   const { label, street, city, zipCode, country, isDefault } = data;
 
@@ -47,6 +51,7 @@ async function createAddress(userId, data) {
   return formatAddress(result.rows[0]);
 }
 
+// Met à jour partiellement une adresse existante.
 async function updateAddress(userId, addressId, data) {
   const existing = await query(
     'SELECT id FROM addresses WHERE id = $1 AND user_id = $2 AND deleted = FALSE',
@@ -79,6 +84,7 @@ async function updateAddress(userId, addressId, data) {
   return formatAddress(result.rows[0]);
 }
 
+// Supprime logiquement une adresse (deleted = TRUE).
 async function deleteAddress(userId, addressId) {
   const result = await query(
     `UPDATE addresses SET deleted = TRUE WHERE id = $1 AND user_id = $2 AND deleted = FALSE RETURNING id`,
@@ -87,6 +93,7 @@ async function deleteAddress(userId, addressId) {
   if (result.rows.length === 0) throw new NotFoundError('Adresse non trouvée');
 }
 
+// Définit une adresse comme adresse par défaut (désactive les autres du même utilisateur).
 async function setDefault(userId, addressId) {
   const existing = await query(
     'SELECT id FROM addresses WHERE id = $1 AND user_id = $2 AND deleted = FALSE',
@@ -107,6 +114,7 @@ async function setDefault(userId, addressId) {
   return formatAddress(result.rows[0]);
 }
 
+// Convertit une ligne PostgreSQL en objet adresse au format API (camelCase).
 function formatAddress(row) {
   return {
     id: row.id,
